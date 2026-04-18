@@ -1,0 +1,17 @@
+services:
+  app:
+    container_name: meshlink_app
+    image: meshlink-server:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "${PORT:-8000}:8000"
+    devices:
+      - "${SERIAL_PORT:-/dev/ttyUSB0}:${SERIAL_PORT:-/dev/ttyUSB0}"
+    group_add:
+      - dialout
+    environment:
+      - SERIAL_PORT=${SERIAL_PORT:-/dev/ttyUSB0}
+      - PORT=8000
+    restart: unless-stopped

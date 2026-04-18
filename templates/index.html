@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeshLink</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0d1117;
+      --surface: #161b22;
+      --border:  #21262d;
+      --border2: #30363d;
+      --text:    #e6edf3;
+      --muted:   #6e7681;
+      --muted2:  #8b949e;
+      --green:   #3fb950;
+      --blue:    #58a6ff;
+      --yellow:  #d29922;
+      --red:     #f85149;
+      --cold:    #79c0ff;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
+      letter-spacing: -0.2px;
+    }
+
+    .logo-icon { color: var(--blue); }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .port-badge {
+      font-size: 11px;
+      color: var(--muted2);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: var(--bg);
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid var(--border2);
+    }
+
+    .conn-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      color: var(--muted);
+      padding: 3px 8px;
+      border-radius: 20px;
+      border: 1px solid var(--border2);
+      transition: all 0.3s;
+    }
+
+    .conn-pill .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--border2);
+      flex-shrink: 0;
+    }
+
+    .conn-pill.live {
+      color: var(--green);
+      border-color: rgba(63,185,80,0.35);
+      background: rgba(63,185,80,0.07);
+    }
+
+    .conn-pill.live .dot {
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    .conn-pill.offline {
+      color: var(--red);
+      border-color: rgba(248,81,73,0.3);
+    }
+
+    .conn-pill.offline .dot { background: var(--red); }
+
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(63,185,80,.5); }
+      70%  { box-shadow: 0 0 0 5px rgba(63,185,80,0); }
+      100% { box-shadow: 0 0 0 0 rgba(63,185,80,0); }
+    }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      overflow-x: auto;
+    }
+
+    .stat-item {
+      padding: 10px 20px;
+      border-right: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .stat-item:last-child { border-right: none; }
+
+    .stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .stat-val {
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .stat-val.green { color: var(--green); }
+    .stat-val.blue  { color: var(--blue);  }
+
+    /* ── Main ── */
+    main {
+      padding: 20px;
+    }
+
+    /* ── Node grid ── */
+    .nodes-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 1200px) { .nodes-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 800px)  { .nodes-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 500px)  { .nodes-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    /* ── Node card ── */
+    .node-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color 0.4s, opacity 0.3s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .node-card.flash { border-color: var(--blue); }
+
+    .node-card.offline {
+      opacity: 0.4;
+      border-style: dashed;
+    }
+
+    /* Card header */
+    .card-head {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-name-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .card-name {
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-id {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: monospace;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-radius: 3px;
+      padding: 1px 5px;
+      flex-shrink: 0;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* Metrics */
+    .card-metrics {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .metric-block {
+      padding: 8px 12px 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .metric-block:last-child { border-bottom: none; }
+
+    .metric-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+    }
+
+    .metric-value {
+      font-size: 20px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .metric-unit {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--muted2);
+      margin-left: 1px;
+    }
+
+    /* Sparkline */
+    .sparkline {
+      height: 32px;
+      width: 100%;
+      overflow: visible;
+      display: block;
+    }
+
+    /* ── Empty ── */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .empty-icon { font-size: 36px; margin-bottom: 12px; }
+    .empty-msg  { font-size: 14px; }
+
+    /* ── Temp color classes ── */
+    .c-cold   { color: var(--cold);   }
+    .c-normal { color: var(--green);  }
+    .c-warm   { color: var(--yellow); }
+    .c-hot    { color: var(--red);    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg class="logo-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="2"/>
+      <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/>
+    </svg>
+    MeshLink
+  </div>
+  <div class="header-right">
+    <span class="port-badge" id="portBadge">—</span>
+    <div class="conn-pill" id="connPill">
+      <span class="dot"></span>
+      <span id="connText">—</span>
+    </div>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-label">Nodes active</div>
+    <div class="stat-val green" id="sNodes">—</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Messages</div>
+    <div class="stat-val" id="sMsgs">—</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Uptime</div>
+    <div class="stat-val blue" id="sUptime">—</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Last packet</div>
+    <div class="stat-val" id="sLast" style="font-size:14px;padding-top:2px">—</div>
+  </div>
+</div>
+
+<main>
+  <div class="nodes-grid" id="grid">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">📡</div>
+      <div class="empty-msg">Waiting for nodes…</div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── Config ──
+const THREE_HOURS_MS  = 3 * 60 * 60 * 1000;
+const OFFLINE_AFTER_MS = 60 * 1000;  // 1 min
+
+// ── State ──
+// nodes[id] = { node_id, node_name, type, msg_id, hops, received_at,
+//               metrics: { temperature: [[ts_ms, v], ...], ... } }
+const nodes = {};
+let globalStats = {};
+let lastPacketAt = null;
+let serverUptimeBase = null;   // { at_ms, uptime_s } for local counting
+
+// ── Metric meta: label, unit, value color ──
+const META = {
+  temperature: { label: 'Temp',     unit: '°C',  color: tempColor },
+  humidity:    { label: 'Humidity', unit: '%',   color: () => 'c-normal' },
+  pressure:    { label: 'Pressure', unit: ' hPa', color: () => '' },
+};
+
+function metaFor(key) {
+  return META[key] || { label: key, unit: '', color: () => '' };
+}
+
+function tempColor(v) {
+  if (v < 10)  return 'c-cold';
+  if (v < 22)  return 'c-normal';
+  if (v < 28)  return 'c-warm';
+  return 'c-hot';
+}
+
+// ── Time helpers ──
+function relTime(isoOrMs) {
+  const ms   = typeof isoOrMs === 'number' ? isoOrMs : new Date(isoOrMs).getTime();
+  const diff = Math.floor((Date.now() - ms) / 1000);
+  if (diff < 5)    return 'now';
+  if (diff < 60)   return diff + 's ago';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  return Math.floor(diff / 3600) + 'h ago';
+}
+
+function fmtUptime(s) {
+  if (s < 60)    return s + 's';
+  if (s < 3600)  return Math.floor(s / 60) + 'm';
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+  return h + 'h ' + m + 'm';
+}
+
+// ── Sparkline SVG ──
+function sparkline(series, colorClass) {
+  if (!series || series.length < 2) return '';
+
+  // Downsample to max 150 points for rendering
+  const pts = series.length > 150
+    ? Array.from({ length: 150 }, (_, i) => series[Math.floor(i * series.length / 150)])
+    : series;
+
+  const W = 200, H = 32, pad = 2;
+  const vals = pts.map(p => p[1]);
+  const tmin = pts[0][0], tmax = pts[pts.length - 1][0] || tmin + 1;
+  const vmin = Math.min(...vals), vmax = Math.max(...vals);
+  const vrange = vmax - vmin || 1;
+
+  const coords = pts.map(([ts, v]) => {
+    const x = pad + ((ts - tmin) / (tmax - tmin)) * (W - pad * 2);
+    const y = pad + (1 - (v - vmin) / vrange) * (H - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+
+  const colorMap = {
+    'c-cold': '#79c0ff', 'c-normal': '#3fb950',
+    'c-warm': '#d29922', 'c-hot':    '#f85149', '': '#58a6ff',
+  };
+  const stroke = colorMap[colorClass] || '#58a6ff';
+
+  return `<svg class="sparkline" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <polyline points="${coords}" fill="none" stroke="${stroke}"
+              stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// ── Render a single card ──
+function buildCard(node) {
+  const card = document.createElement('div');
+  card.className = 'node-card';
+  card.id = 'card-' + node.node_id;
+  updateCard(card, node);
+  return card;
+}
+
+function updateCard(card, node) {
+  const recvMs  = new Date(node.received_at).getTime();
+  const isOff   = (Date.now() - recvMs) > OFFLINE_AFTER_MS;
+  card.className = 'node-card' + (isOff ? ' offline' : '');
+
+  // Build metrics HTML
+  let metricsHTML = '';
+  for (const [key, series] of Object.entries(node.metrics || {})) {
+    if (!series.length) continue;
+    const curVal   = series[series.length - 1][1];
+    const m        = metaFor(key);
+    const colorCls = m.color(curVal);
+    const valStr   = Number.isInteger(curVal) ? curVal : curVal.toFixed(1);
+    metricsHTML += `
+      <div class="metric-block">
+        <div class="metric-top">
+          <span class="metric-label">${m.label}</span>
+          <span class="metric-value ${colorCls}">${valStr}<span class="metric-unit">${m.unit}</span></span>
+        </div>
+        ${sparkline(series, colorCls)}
+      </div>`;
+  }
+
+  if (!metricsHTML) {
+    metricsHTML = `<div class="metric-block" style="color:var(--muted);font-size:11px;text-align:center;padding:16px">no metrics</div>`;
+  }
+
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="card-name-row">
+        <span class="card-name" title="${node.node_name}">${node.node_name}</span>
+        <span class="card-id">#${node.node_id}</span>
+      </div>
+      <div class="card-meta">
+        <span class="last-seen" data-ts="${node.received_at}">${relTime(node.received_at)}</span>
+        <span style="color:var(--muted);font-size:10px">${node.type}</span>
+      </div>
+    </div>
+    <div class="card-metrics">${metricsHTML}</div>`;
+}
+
+// ── Grid management ──
+function getOrCreateCard(node) {
+  const existing = document.getElementById('card-' + node.node_id);
+  if (existing) return existing;
+
+  const card = buildCard(node);
+  const grid  = document.getElementById('grid');
+  const empty = document.getElementById('emptyState');
+  if (empty) empty.remove();
+  grid.appendChild(card);
+  return card;
+}
+
+function flashCard(nodeId) {
+  const card = document.getElementById('card-' + nodeId);
+  if (!card) return;
+  card.classList.remove('flash');
+  void card.offsetWidth;
+  card.classList.add('flash');
+  setTimeout(() => card.classList.remove('flash'), 500);
+}
+
+// ── Stats bar ──
+function renderStats() {
+  const activeCount = Object.values(nodes).filter(n =>
+    (Date.now() - new Date(n.received_at).getTime()) < OFFLINE_AFTER_MS
+  ).length;
+
+  document.getElementById('sNodes').textContent = activeCount;
+  document.getElementById('sMsgs').textContent  = globalStats.total_messages ?? '—';
+
+  if (serverUptimeBase) {
+    const elapsed = Math.floor((Date.now() - serverUptimeBase.at_ms) / 1000);
+    document.getElementById('sUptime').textContent = fmtUptime(serverUptimeBase.uptime_s + elapsed);
+  }
+
+  if (lastPacketAt) {
+    document.getElementById('sLast').textContent = relTime(lastPacketAt);
+  }
+
+  // Connection pill
+  const pill = document.getElementById('connPill');
+  const txt  = document.getElementById('connText');
+  const port = document.getElementById('portBadge');
+  if (globalStats.serial_port) port.textContent = globalStats.serial_port;
+  if (globalStats.connected) {
+    pill.className = 'conn-pill live';
+    txt.textContent = 'LIVE';
+  } else {
+    pill.className = 'conn-pill offline';
+    txt.textContent = 'OFFLINE';
+  }
+}
+
+// ── Data ingestion ──
+function applySnapshot(data) {
+  globalStats = data.stats;
+  serverUptimeBase = { at_ms: Date.now(), uptime_s: data.stats.uptime_seconds || 0 };
+
+  for (const n of data.nodes) {
+    // metrics from server are { key: [[ts_ms, v], ...] }
+    nodes[n.node_id] = n;
+    getOrCreateCard(n);
+    updateCard(document.getElementById('card-' + n.node_id), n);
+  }
+  renderStats();
+}
+
+function applyReading(d) {
+  const ts = d.ts_ms;
+  const cutoff = ts - THREE_HOURS_MS;
+  lastPacketAt = ts;
+
+  let node = nodes[d.node_id];
+  if (!node) {
+    node = { node_id: d.node_id, node_name: d.node_name, metrics: {} };
+  }
+
+  // Update static fields
+  node.node_name   = d.node_name;
+  node.type        = d.type;
+  node.msg_id      = d.msg_id;
+  node.hops        = d.hops;
+  node.received_at = d.received_at;
+
+  // Append new metric points and trim old
+  for (const [key, val] of Object.entries(d.metrics)) {
+    if (!node.metrics[key]) node.metrics[key] = [];
+    node.metrics[key].push([ts, val]);
+    // trim from front
+    let i = 0;
+    while (i < node.metrics[key].length && node.metrics[key][i][0] < cutoff) i++;
+    if (i > 0) node.metrics[key] = node.metrics[key].slice(i);
+  }
+
+  nodes[d.node_id] = node;
+
+  if (globalStats.total_messages != null) globalStats.total_messages++;
+
+  const card = getOrCreateCard(node);
+  updateCard(card, node);
+  flashCard(d.node_id);
+  renderStats();
+}
+
+// ── Offline sweep: every 15s check all cards ──
+function offlineSweep() {
+  for (const node of Object.values(nodes)) {
+    const card = document.getElementById('card-' + node.node_id);
+    if (!card) continue;
+    const age = Date.now() - new Date(node.received_at).getTime();
+    if (age > OFFLINE_AFTER_MS) {
+      card.className = 'node-card offline';
+    }
+  }
+  // Update active count
+  renderStats();
+}
+
+// ── Tick: relative times & uptime ──
+function tick() {
+  document.querySelectorAll('.last-seen[data-ts]').forEach(el => {
+    el.textContent = relTime(el.dataset.ts);
+  });
+  if (serverUptimeBase) {
+    const elapsed = Math.floor((Date.now() - serverUptimeBase.at_ms) / 1000);
+    document.getElementById('sUptime').textContent = fmtUptime(serverUptimeBase.uptime_s + elapsed);
+  }
+  if (lastPacketAt) {
+    document.getElementById('sLast').textContent = relTime(lastPacketAt);
+  }
+  const activeCount = Object.values(nodes).filter(n =>
+    (Date.now() - new Date(n.received_at).getTime()) < OFFLINE_AFTER_MS
+  ).length;
+  document.getElementById('sNodes').textContent = activeCount;
+}
+
+// ── SSE ──
+function connect() {
+  const es = new EventSource('/api/events');
+
+  es.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.event === 'snapshot') { applySnapshot(msg.data); return; }
+    if (msg.event === 'reading')  { applyReading(msg.data);  return; }
+    if (msg.event === 'status') {
+      globalStats.connected   = msg.data.connected;
+      globalStats.serial_port = msg.data.port || globalStats.serial_port;
+      renderStats();
+    }
+  };
+
+  es.onerror = () => {
+    es.close();
+    globalStats.connected = false;
+    renderStats();
+    setTimeout(connect, 3000);
+  };
+}
+
+connect();
+setInterval(tick, 5000);
+setInterval(offlineSweep, 15000);
+</script>
+</body>
+</html>
