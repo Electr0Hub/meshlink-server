@@ -41,7 +41,7 @@ ESP32_VIDS = {
     0x303A,  # Espressif native USB
 }
 
-# New format: [RELAY] origin=AA:BB:CC:DD:EE:FF msg=42 temp=23.5 hops=1
+# Format: [RELAY] origin=AA:BB:CC:DD:EE:FF temp=23.5 pres=858.5 hum=44.2 hops=1
 HEADER_RE = re.compile(
     r"\[(SEND|RELAY)\]\s+(?:origin=)?([0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5})\s+(.*)"
 )
@@ -52,8 +52,8 @@ _store_lock = threading.Lock()
 _sse_lock   = threading.Lock()
 
 # nodes[mac] = {
-#   node_id (mac), node_name, type, msg_id, hops, received_at,
-#   metrics: { "temperature": [[ts_ms, val], ...], ... }
+#   node_id, node_name, type, hops, received_at,
+#   metrics: { "temp": [[ts_ms, val], ...], "hum": [...], "pres": [...] }
 # }
 nodes: dict[str, dict] = {}
 

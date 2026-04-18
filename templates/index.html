@@ -304,9 +304,9 @@
     .empty-msg  { font-size: 14px; }
 
     /* ── Temp color classes ── */
-    .c-freeze { color: #a8d8ff;       }
-    .c-cold   { color: var(--cold);   }
-    .c-normal { color: var(--blue);   }
+    .c-freeze { color: #a8d8ff;        }
+    .c-cold   { color: var(--blue);   }
+    .c-normal { color: var(--green);  }
     .c-warm   { color: #e8843a;       }
     .c-hot    { color: var(--red);    }
   </style>
@@ -381,7 +381,7 @@ const ICONS = {
 
 const META = {
   temp: { label: 'Temperature', unit: '°C',   color: tempColor },
-  hum:  { label: 'Humidity',    unit: '%',    color: () => 'c-normal' },
+  hum:  { label: 'Humidity',    unit: '%',    color: () => 'c-cold' },
   pres: { label: 'Pressure',    unit: ' hPa', color: presColor },
 };
 
@@ -444,9 +444,9 @@ function sparkline(series, colorClass) {
   }).join(' ');
 
   const colorMap = {
-    'c-freeze': '#a8d8ff', 'c-cold': '#79c0ff',
-    'c-normal': '#58a6ff', 'c-warm': '#e8843a',
-    'c-hot':    '#f85149', '':       '#58a6ff',
+    'c-freeze': '#a8d8ff', 'c-cold': '#58a6ff',
+    'c-normal': '#3fb950', 'c-warm': '#e8843a',
+    'c-hot':    '#f85149', '':       '#3fb950',
   };
   const stroke = colorMap[colorClass] || '#58a6ff';
 

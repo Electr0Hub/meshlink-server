@@ -23,11 +23,11 @@ Companion project: `../meshlink-station` (ESP32 firmware for all nodes).
 
 ### Serial Line Format Expected
 ```
-[RELAY] origin=kitchen(2) msg=42 temp=23.5 hops=1
-[SEND] origin=living-room(1) msg=10 temp=22.0 hops=0
+[RELAY] origin=94:54:C5:73:87:54 temp=23.5 pres=858.5 hum=44.2 hops=1
+[SEND] origin=94:54:C5:73:87:54 temp=22.0 pres=859.1 hum=41.0 hops=0
 ```
 
-The regex captures: type (SEND/RELAY), node_name, node_id, msg_id, temperature, hops.
+The regex captures: type (SEND/RELAY), MAC address, then all key=value pairs dynamically.
 
 **Important**: The regex pattern must stay in sync with the `Serial.printf` format strings in `meshlink-station/src/main.cpp`. Any firmware format change requires updating `SENSOR_RE`.
 
