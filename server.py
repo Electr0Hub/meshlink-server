@@ -27,7 +27,9 @@ WEB_PORT        = int(os.getenv("PORT", 8000))
 SERIAL_PORT_ENV = os.getenv("SERIAL_PORT", "")
 THREE_HOURS_MS  = 3 * 60 * 60 * 1000
 
-ALIASES_FILE = Path(__file__).parent / "aliases.json"
+DATA_DIR     = Path(os.getenv("DATA_DIR", Path(__file__).parent / "data"))
+ALIASES_FILE = DATA_DIR / "aliases.json"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # Fields that are node identity / routing info — not graphed
 GRAPHABLE_EXCLUDE = {"node_id", "node_name", "type", "received_at", "hops"}

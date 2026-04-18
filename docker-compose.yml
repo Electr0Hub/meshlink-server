@@ -16,4 +16,10 @@ services:
       - SERIAL_PORT=${SERIAL_PORT:-/dev/ttyUSB0}
       - PORT=8000
       - PYTHONUNBUFFERED=1
+      - DATA_DIR=/data
+    volumes:
+      - meshlink_data:/data
     restart: unless-stopped
+
+volumes:
+  meshlink_data:
