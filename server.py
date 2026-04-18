@@ -30,7 +30,7 @@ THREE_HOURS_MS  = 3 * 60 * 60 * 1000
 ALIASES_FILE = Path(__file__).parent / "aliases.json"
 
 # Fields that are node identity / routing info — not graphed
-GRAPHABLE_EXCLUDE = {"node_id", "node_name", "type", "msg_id", "received_at"}
+GRAPHABLE_EXCLUDE = {"node_id", "node_name", "type", "received_at", "hops"}
 
 # USB vendor IDs commonly used by ESP32 bridge chips
 ESP32_VIDS = {
@@ -43,7 +43,7 @@ ESP32_VIDS = {
 
 # New format: [RELAY] origin=AA:BB:CC:DD:EE:FF msg=42 temp=23.5 hops=1
 HEADER_RE = re.compile(
-    r"\[(SEND|RELAY)\]\s+(?:origin=)?([0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5})\s+msg=(\d+)\s+(.*)"
+    r"\[(SEND|RELAY)\]\s+(?:origin=)?([0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5})\s+(.*)"
 )
 KV_RE = re.compile(r"(\w+)=([\d.]+)")
 
@@ -142,11 +142,10 @@ def parse_line(line: str) -> dict | None:
         "type":        m.group(1),
         "node_id":     mac,
         "node_name":   _resolve_name(mac),
-        "msg_id":      int(m.group(3)),
         "received_at": datetime.now().isoformat(),
     }
 
-    for kv in KV_RE.finditer(m.group(4)):
+    for kv in KV_RE.finditer(m.group(3)):
         key, raw = kv.group(1), kv.group(2)
         result[key] = float(raw) if '.' in raw else int(raw)
 
@@ -231,7 +230,6 @@ def serial_reader(port: str):
                                 "node_id":     mac,
                                 "node_name":   data["node_name"],
                                 "type":        data["type"],
-                                "msg_id":      data["msg_id"],
                                 "hops":        data.get("hops"),
                                 "received_at": data["received_at"],
                                 "metrics":     updated_metrics,
@@ -242,7 +240,6 @@ def serial_reader(port: str):
                             "node_id":     mac,
                             "node_name":   data["node_name"],
                             "type":        data["type"],
-                            "msg_id":      data["msg_id"],
                             "hops":        data.get("hops"),
                             "received_at": data["received_at"],
                             "ts_ms":       ts_ms,

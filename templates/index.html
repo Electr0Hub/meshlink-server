@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MeshLink</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -205,6 +206,21 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      cursor: pointer;
+    }
+
+    .card-name:hover { color: var(--blue); }
+
+    .name-input {
+      font-weight: 600;
+      font-size: 13px;
+      background: var(--bg);
+      border: 1px solid var(--blue);
+      border-radius: 4px;
+      color: var(--text);
+      padding: 1px 5px;
+      width: 100%;
+      outline: none;
     }
 
     .card-id {
@@ -288,9 +304,10 @@
     .empty-msg  { font-size: 14px; }
 
     /* ── Temp color classes ── */
+    .c-freeze { color: #a8d8ff;       }
     .c-cold   { color: var(--cold);   }
-    .c-normal { color: var(--green);  }
-    .c-warm   { color: var(--yellow); }
+    .c-normal { color: var(--blue);   }
+    .c-warm   { color: #e8843a;       }
     .c-hot    { color: var(--red);    }
   </style>
 </head>
@@ -316,19 +333,19 @@
 
 <div class="stats-bar">
   <div class="stat-item">
-    <div class="stat-label">Nodes active</div>
+    <div class="stat-label"><i class="fa-solid fa-tower-broadcast" style="margin-right:5px"></i>Nodes active</div>
     <div class="stat-val green" id="sNodes">—</div>
   </div>
   <div class="stat-item">
-    <div class="stat-label">Messages</div>
+    <div class="stat-label"><i class="fa-solid fa-message" style="margin-right:5px"></i>Messages</div>
     <div class="stat-val" id="sMsgs">—</div>
   </div>
   <div class="stat-item">
-    <div class="stat-label">Uptime</div>
+    <div class="stat-label"><i class="fa-solid fa-clock" style="margin-right:5px"></i>Uptime</div>
     <div class="stat-val blue" id="sUptime">—</div>
   </div>
   <div class="stat-item">
-    <div class="stat-label">Last packet</div>
+    <div class="stat-label"><i class="fa-solid fa-wave-square" style="margin-right:5px"></i>Last packet</div>
     <div class="stat-val" id="sLast" style="font-size:14px;padding-top:2px">—</div>
   </div>
 </div>
@@ -356,10 +373,16 @@ let lastPacketAt = null;
 let serverUptimeBase = null;   // { at_ms, uptime_s } for local counting
 
 // ── Metric meta: label, unit, value color ──
+const ICONS = {
+  temp: `<i class="fa-solid fa-temperature-half" style="margin-right:5px"></i>`,
+  hum:  `<i class="fa-solid fa-droplet" style="margin-right:5px"></i>`,
+  pres: `<i class="fa-solid fa-gauge" style="margin-right:5px"></i>`,
+};
+
 const META = {
-  temperature: { label: 'Temp',     unit: '°C',  color: tempColor },
-  humidity:    { label: 'Humidity', unit: '%',   color: () => 'c-normal' },
-  pressure:    { label: 'Pressure', unit: ' hPa', color: () => '' },
+  temp: { label: 'Temperature', unit: '°C',   color: tempColor },
+  hum:  { label: 'Humidity',    unit: '%',    color: () => 'c-normal' },
+  pres: { label: 'Pressure',    unit: ' hPa', color: presColor },
 };
 
 function metaFor(key) {
@@ -367,9 +390,18 @@ function metaFor(key) {
 }
 
 function tempColor(v) {
+  if (v < 0)   return 'c-freeze';
   if (v < 10)  return 'c-cold';
-  if (v < 22)  return 'c-normal';
-  if (v < 28)  return 'c-warm';
+  if (v < 26)  return 'c-normal';
+  if (v < 32)  return 'c-warm';
+  return 'c-hot';
+}
+
+function presColor(v) {
+  if (v < 960)  return 'c-freeze';
+  if (v < 990)  return 'c-cold';
+  if (v < 1025) return 'c-normal';
+  if (v < 1045) return 'c-warm';
   return 'c-hot';
 }
 
@@ -412,8 +444,9 @@ function sparkline(series, colorClass) {
   }).join(' ');
 
   const colorMap = {
-    'c-cold': '#79c0ff', 'c-normal': '#3fb950',
-    'c-warm': '#d29922', 'c-hot':    '#f85149', '': '#58a6ff',
+    'c-freeze': '#a8d8ff', 'c-cold': '#79c0ff',
+    'c-normal': '#58a6ff', 'c-warm': '#e8843a',
+    'c-hot':    '#f85149', '':       '#58a6ff',
   };
   const stroke = colorMap[colorClass] || '#58a6ff';
 
@@ -448,7 +481,7 @@ function updateCard(card, node) {
     metricsHTML += `
       <div class="metric-block">
         <div class="metric-top">
-          <span class="metric-label">${m.label}</span>
+          <span class="metric-label">${ICONS[key] || ''}${m.label}</span>
           <span class="metric-value ${colorCls}">${valStr}<span class="metric-unit">${m.unit}</span></span>
         </div>
         ${sparkline(series, colorCls)}
@@ -462,8 +495,8 @@ function updateCard(card, node) {
   card.innerHTML = `
     <div class="card-head">
       <div class="card-name-row">
-        <span class="card-name" title="${node.node_name}">${node.node_name}</span>
-        <span class="card-id">#${node.node_id}</span>
+        <span class="card-name" title="Click to rename" onclick="startRename('${node.node_id}', this)">${node.node_name}</span>
+        <span class="card-id">${node.node_id}</span>
       </div>
       <div class="card-meta">
         <span class="last-seen" data-ts="${node.received_at}">${relTime(node.received_at)}</span>
@@ -618,6 +651,15 @@ function connect() {
     const msg = JSON.parse(e.data);
     if (msg.event === 'snapshot') { applySnapshot(msg.data); return; }
     if (msg.event === 'reading')  { applyReading(msg.data);  return; }
+    if (msg.event === 'alias') {
+      const n = nodes[msg.data.node_id];
+      if (n) {
+        n.node_name = msg.data.node_name;
+        const card = document.getElementById('card-' + msg.data.node_id);
+        if (card) updateCard(card, n);
+      }
+      return;
+    }
     if (msg.event === 'status') {
       globalStats.connected   = msg.data.connected;
       globalStats.serial_port = msg.data.port || globalStats.serial_port;
@@ -631,6 +673,39 @@ function connect() {
     renderStats();
     setTimeout(connect, 3000);
   };
+}
+
+function startRename(nodeId, el) {
+  const input = document.createElement('input');
+  input.className = 'name-input';
+  input.value = nodes[nodeId]?.node_name === nodeId ? '' : (nodes[nodeId]?.node_name || '');
+  input.placeholder = nodeId;
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+
+  async function commit() {
+    const name = input.value.trim();
+    if (name && name !== nodeId) {
+      await fetch(`/api/aliases/${encodeURIComponent(nodeId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+    }
+    const span = document.createElement('span');
+    span.className = 'card-name';
+    span.title = 'Click to rename';
+    span.onclick = () => startRename(nodeId, span);
+    span.textContent = name || nodes[nodeId]?.node_name || nodeId;
+    input.replaceWith(span);
+  }
+
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') input.blur();
+    if (e.key === 'Escape') { input.value = ''; input.blur(); }
+  });
 }
 
 connect();
