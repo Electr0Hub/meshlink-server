@@ -11,7 +11,9 @@ services:
       - "${SERIAL_PORT:-/dev/ttyUSB0}:${SERIAL_PORT:-/dev/ttyUSB0}"
     group_add:
       - dialout
+    # If the serial device is not present, comment out the devices block above
     environment:
       - SERIAL_PORT=${SERIAL_PORT:-/dev/ttyUSB0}
       - PORT=8000
+      - PYTHONUNBUFFERED=1
     restart: unless-stopped
