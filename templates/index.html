@@ -164,9 +164,11 @@
       gap: 12px;
     }
 
+    @media (max-width: 1400px) { .nodes-grid { grid-template-columns: repeat(5, 1fr); } }
     @media (max-width: 1200px) { .nodes-grid { grid-template-columns: repeat(4, 1fr); } }
-    @media (max-width: 800px)  { .nodes-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 500px)  { .nodes-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 900px)  { .nodes-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 650px)  { .nodes-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 400px)  { .nodes-grid { grid-template-columns: 1fr; } }
 
     /* ── Node card ── */
     .node-card {
@@ -196,8 +198,9 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 4px;
+      gap: 6px;
       margin-bottom: 4px;
+      flex-wrap: wrap;
     }
 
     .card-name {
@@ -207,6 +210,8 @@
       overflow: hidden;
       text-overflow: ellipsis;
       cursor: pointer;
+      min-width: 0;
+      flex: 1;
     }
 
     .card-name:hover { color: var(--blue); }
@@ -232,6 +237,14 @@
       border-radius: 3px;
       padding: 1px 5px;
       flex-shrink: 0;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 900px) {
+      .card-id { flex-basis: 100%; text-align: left; }
     }
 
     .card-meta {
@@ -254,12 +267,19 @@
       border-bottom: 1px solid var(--border);
     }
 
+    @media (max-width: 650px) {
+      .metric-block { padding: 6px 8px 4px; }
+      .card-head    { padding: 8px 10px 6px; }
+      main          { padding: 12px; }
+    }
+
     .metric-block:last-child { border-bottom: none; }
 
     .metric-top {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
+      gap: 6px;
       margin-bottom: 4px;
     }
 
@@ -268,6 +288,11 @@
       text-transform: uppercase;
       letter-spacing: 0.6px;
       color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      flex-shrink: 1;
     }
 
     .metric-value {
@@ -275,6 +300,16 @@
       font-weight: 700;
       font-variant-numeric: tabular-nums;
       line-height: 1;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 650px) {
+      .metric-value { font-size: 17px; }
+    }
+
+    @media (max-width: 400px) {
+      .metric-value { font-size: 22px; }
     }
 
     .metric-unit {
