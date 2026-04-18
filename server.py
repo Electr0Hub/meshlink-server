@@ -42,10 +42,8 @@ ESP32_VIDS = {
 }
 
 # Format: [RELAY] origin=AA:BB:CC:DD:EE:FF temp=23.5 pres=858.5 hum=44.2 hops=1
-HEADER_RE = re.compile(
-    r"\[(SEND|RELAY)\]\s+(?:origin=)?([0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5})\s+(.*)"
-)
-KV_RE = re.compile(r"(\w+)=([\d.]+)")
+KNOWN_TYPES   = {"SEND", "RELAY"}
+KNOWN_METRICS = {"temp", "pres", "hum", "hops"}
 
 # --- In-memory data store ---
 _store_lock = threading.Lock()
@@ -133,23 +131,38 @@ def find_port() -> str:
 # --- Parsing ---
 
 def parse_line(line: str) -> dict | None:
-    m = HEADER_RE.search(line)
-    if not m:
+    tokens = line.strip().split()
+    if not tokens:
         return None
 
-    mac = m.group(2).upper()
-    result: dict = {
-        "type":        m.group(1),
+    # First token must be [SEND] or [RELAY]
+    head = tokens[0].strip("[]")
+    if head not in KNOWN_TYPES:
+        return None
+
+    # Remaining tokens are key=value
+    fields: dict = {}
+    for tok in tokens[1:]:
+        if "=" not in tok:
+            continue
+        key, raw = tok.split("=", 1)
+        if key == "origin":
+            fields["origin"] = raw
+        elif key in KNOWN_METRICS:
+            fields[key] = float(raw) if "." in raw else int(raw)
+
+    mac = fields.pop("origin", None)
+    if not mac:
+        return None
+
+    mac = mac.upper()
+    return {
+        "type":        head,
         "node_id":     mac,
         "node_name":   _resolve_name(mac),
         "received_at": datetime.now().isoformat(),
+        **fields,
     }
-
-    for kv in KV_RE.finditer(m.group(3)):
-        key, raw = kv.group(1), kv.group(2)
-        result[key] = float(raw) if '.' in raw else int(raw)
-
-    return result
 
 
 # --- Helpers ---
