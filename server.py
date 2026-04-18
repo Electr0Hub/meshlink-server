@@ -12,7 +12,7 @@ import sys
 import threading
 import time
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import serial
@@ -63,7 +63,7 @@ history: deque = deque(maxlen=500)
 
 _stats: dict = {
     "total_messages": 0,
-    "started_at": datetime.now().isoformat(),
+    "started_at": datetime.now(timezone.utc).isoformat(),
     "serial_port": "",
     "connected": False,
 }
@@ -160,7 +160,7 @@ def parse_line(line: str) -> dict | None:
         "type":        head,
         "node_id":     mac,
         "node_name":   _resolve_name(mac),
-        "received_at": datetime.now().isoformat(),
+        "received_at": datetime.now(timezone.utc).isoformat(),
         **fields,
     }
 
@@ -295,7 +295,7 @@ async def get_nodes():
 async def get_stats():
     with _store_lock:
         started  = datetime.fromisoformat(_stats["started_at"])
-        uptime_s = int((datetime.now() - started).total_seconds())
+        uptime_s = int((datetime.now(timezone.utc) - started).total_seconds())
         return {**_stats, "nodes_count": len(nodes), "uptime_seconds": uptime_s}
 
 
@@ -368,7 +368,7 @@ async def sse_stream():
                         "stats": {
                             **_stats,
                             "nodes_count":    len(nodes),
-                            "uptime_seconds": int((datetime.now() - started).total_seconds()),
+                            "uptime_seconds": int((datetime.now(timezone.utc) - started).total_seconds()),
                         },
                     },
                 }
