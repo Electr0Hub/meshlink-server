@@ -1,5 +1,8 @@
 # meshlink-server
 
+<img width="1853" height="926" alt="image" src="https://github.com/user-attachments/assets/48447070-ed5d-45cd-91f2-c93608d9d7c0" />
+
+
 Python service that reads structured serial output from a USB-connected ESP32 bridge node, parses it into JSON sensor data, and serves a live web dashboard.
 
 Part of the [MeshLink](../meshlink-station) home mesh network. The bridge ESP32 runs `meshlink-station` firmware in relay-only mode, printing received mesh traffic over USB serial.
