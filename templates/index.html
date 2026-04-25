@@ -372,10 +372,6 @@
     <div class="stat-val green" id="sNodes">—</div>
   </div>
   <div class="stat-item">
-    <div class="stat-label"><i class="fa-solid fa-message" style="margin-right:5px"></i>Messages</div>
-    <div class="stat-val" id="sMsgs">—</div>
-  </div>
-  <div class="stat-item">
     <div class="stat-label"><i class="fa-solid fa-clock" style="margin-right:5px"></i>Uptime</div>
     <div class="stat-val blue" id="sUptime">—</div>
   </div>
@@ -570,7 +566,6 @@ function renderStats() {
   ).length;
 
   document.getElementById('sNodes').textContent = activeCount;
-  document.getElementById('sMsgs').textContent  = globalStats.total_messages ?? '—';
 
   if (serverUptimeBase) {
     const elapsed = Math.floor((Date.now() - serverUptimeBase.at_ms) / 1000);

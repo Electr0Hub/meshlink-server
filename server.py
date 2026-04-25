@@ -64,7 +64,6 @@ _aliases_lock = threading.Lock()
 history: deque = deque(maxlen=500)
 
 _stats: dict = {
-    "total_messages": 0,
     "started_at": datetime.now(timezone.utc).isoformat(),
     "serial_port": "",
     "connected": False,
@@ -225,7 +224,6 @@ def serial_reader(port: str):
                         }
 
                         with _store_lock:
-                            _stats["total_messages"] += 1
                             mac = data["node_id"]
                             prev_metrics = nodes.get(mac, {}).get("metrics", {})
 
